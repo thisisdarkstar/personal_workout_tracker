@@ -20,7 +20,7 @@ export default function DayNavigator({ currentWeek, currentDay, onWeekChange, on
 
   return (
     <>
-      <div className="bg-boxing-panel rounded-2xl p-4 mb-4">
+      <div className="bg-boxing-panel rounded-2xl p-4 mb-4 pb-2">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <span 
@@ -70,7 +70,7 @@ export default function DayNavigator({ currentWeek, currentDay, onWeekChange, on
             <ChevronLeft className="w-6 h-6" />
           </button>
           
-          <div ref={scrollRef} className="flex-1 flex gap-1.5 overflow-x-auto scrollbar-thin px-1">
+          <div ref={scrollRef} className="flex-1 flex gap-1.5 overflow-x-auto scrollbar-thin px-1 pr-4">
             {DAYS.map((day, index) => {
               const isToday = weekInfo && weekInfo.isToday && currentDay === index
               return (

@@ -81,7 +81,7 @@ export default function App() {
         </div>
       </header>
 
-      <main className="flex-1 px-3 pb-28 overflow-y-auto">
+      <main className="flex-1 px-3 pt-4 pb-28 overflow-y-auto">
         <DayNavigator currentWeek={currentWeek} currentDay={currentDay} onWeekChange={setCurrentWeek} onDayChange={setCurrentDay} weekInfo={weekInfo} startDate={data.startDate} />
 
         <div className="flex gap-2 mb-4">
@@ -157,7 +157,7 @@ export default function App() {
       )}
 
       <nav className="fixed bottom-0 left-0 right-0 bg-boxing-panel/98 backdrop-blur border-t border-boxing-ring">
-        <div className="flex justify-around h-16">
+        <div className="flex justify-around h-20 pt-3 pb-6">
           <button onClick={() => setActiveTab('workout')} className={`flex flex-col items-center ${activeTab==='workout'?'text-boxing-neon':'text-gray-500'}`}>
             <Dumbbell className="w-6 h-6" /><span className="text-xs">Workout</span>
           </button>
