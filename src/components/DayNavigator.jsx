@@ -1,11 +1,22 @@
 import { DAYS, PHASES, getPhase, DAY_TYPES } from '../data/workoutPlan'
 import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 export default function DayNavigator({ currentWeek, currentDay, onWeekChange, onDayChange, weekInfo, startDate }) {
   const phase = getPhase(currentWeek)
   const phaseData = PHASES[phase]
   const [showCalendar, setShowCalendar] = useState(false)
+  const scrollRef = useRef(null)
+
+  useEffect(() => {
+    if (weekInfo?.isToday && scrollRef.current) {
+      const todayIndex = weekInfo.day
+      const button = scrollRef.current.children[todayIndex]
+      if (button) {
+        button.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
+      }
+    }
+  }, [currentWeek, weekInfo?.isToday, weekInfo?.day])
 
   return (
     <>
@@ -59,7 +70,7 @@ export default function DayNavigator({ currentWeek, currentDay, onWeekChange, on
             <ChevronLeft className="w-6 h-6" />
           </button>
           
-          <div className="flex-1 flex gap-1.5 overflow-x-auto scrollbar-thin px-1">
+          <div ref={scrollRef} className="flex-1 flex gap-1.5 overflow-x-auto scrollbar-thin px-1">
             {DAYS.map((day, index) => {
               const isToday = weekInfo && weekInfo.isToday && currentDay === index
               return (
