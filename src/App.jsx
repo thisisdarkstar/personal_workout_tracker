@@ -189,7 +189,7 @@ export default function App() {
       </main>
 
       {/* Floating action buttons */}
-      <div className="fixed bottom-20 right-4 flex flex-col gap-3 z-30">
+      <div className="fixed bottom-28 right-4 flex flex-col gap-3 z-30">
         <button
           onClick={() => { setShowWater(!showWater); setShowNotes(false) }}
           className="w-14 h-14 rounded-full bg-blue-500 text-white flex flex-col items-center justify-center shadow-lg active:scale-95 transition"
