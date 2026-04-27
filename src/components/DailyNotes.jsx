@@ -1,4 +1,4 @@
-import { FileText, Save, X } from 'lucide-react'
+import { FileText, Save } from 'lucide-react'
 import { useState } from 'react'
 
 export default function DailyNotes({ currentWeek, currentDay, notes, saveNote, getNoteKey }) {
@@ -20,17 +20,14 @@ export default function DailyNotes({ currentWeek, currentDay, notes, saveNote, g
           <h3 className="text-white font-semibold">Daily Notes</h3>
         </div>
         {existingNote && !isEditing && (
-          <button
-            onClick={() => setIsEditing(true)}
-            className="text-xs text-gray-400 hover:text-white"
-          >
+          <button onClick={() => setIsEditing(true)} className="text-xs text-gray-400 hover:text-white">
             Edit
           </button>
         )}
       </div>
 
       {isEditing ? (
-        <div className="space-3">
+        <div className="space-y-3">
           <textarea
             value={note}
             onChange={(e) => setNote(e.target.value)}
@@ -40,10 +37,7 @@ export default function DailyNotes({ currentWeek, currentDay, notes, saveNote, g
           />
           <div className="flex gap-2">
             <button
-              onClick={() => {
-                setNote(existingNote)
-                setIsEditing(false)
-              }}
+              onClick={() => { setNote(existingNote); setIsEditing(false) }}
               className="flex-1 py-2 bg-boxing-ring text-gray-400 rounded-lg text-sm font-medium"
             >
               Cancel
@@ -58,7 +52,7 @@ export default function DailyNotes({ currentWeek, currentDay, notes, saveNote, g
           </div>
         </div>
       ) : existingNote ? (
-        <div 
+        <div
           onClick={() => setIsEditing(true)}
           className="p-3 bg-boxing-dark rounded-xl cursor-pointer hover:bg-boxing-dark/80 transition"
         >

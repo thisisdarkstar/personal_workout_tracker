@@ -1,4 +1,4 @@
-import { FileText, ChevronRight, Trash2 } from 'lucide-react'
+import { FileText, ChevronRight } from 'lucide-react'
 import { DAYS } from '../data/workoutPlan'
 
 export default function NotesHistory({ dailyNotes, getNoteKey, currentWeek, currentDay, onSelectNote }) {

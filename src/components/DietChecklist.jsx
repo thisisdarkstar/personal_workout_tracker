@@ -1,8 +1,9 @@
-import { Utensils, CheckCircle2, Wheat, Flame, Droplets, Moon, Apple } from 'lucide-react'
-import { DIET_PLANS } from '../data/workoutPlan'
+import { Utensils, CheckCircle2, Flame, Droplets, Moon, Apple } from 'lucide-react'
+import { getDietForDay } from '../data/workoutPlan'
 
 export default function DietChecklist({ currentWeek, currentDay, completed, onToggle, getMealKey }) {
-  const { meals, targets } = DIET_PLANS
+  const { label, meals, targets } = getDietForDay(currentDay)
+  const isRestDay = label === 'Rest Day'
 
   return (
     <div className="bg-boxing-panel rounded-2xl p-4 mb-4">
@@ -11,12 +12,18 @@ export default function DietChecklist({ currentWeek, currentDay, completed, onTo
           <Utensils className="w-5 h-5 text-boxing-accent" />
           <h3 className="text-white font-semibold">Diet Plan</h3>
         </div>
-        <span className="text-gray-500 text-sm">Daily</span>
+        <span
+          className={`text-xs font-semibold px-2 py-1 rounded-full ${
+            isRestDay ? 'bg-purple-500/20 text-purple-400' : 'bg-boxing-neon/15 text-boxing-neon'
+          }`}
+        >
+          {label}
+        </span>
       </div>
 
       <div className="space-y-5">
         {meals.map((meal) => {
-          const completedItems = meal.items.filter(item => 
+          const completedItems = meal.items.filter(item =>
             completed[getMealKey(currentWeek, currentDay, meal.id, item)]
           ).length
           const isFullyCompleted = completedItems === meal.items.length
@@ -28,9 +35,7 @@ export default function DietChecklist({ currentWeek, currentDay, completed, onTo
                 <span className={`font-semibold ${isFullyCompleted ? 'text-boxing-accent' : 'text-white'}`}>
                   {meal.label}
                 </span>
-                {isFullyCompleted && (
-                  <CheckCircle2 className="w-4 h-4 text-boxing-accent" />
-                )}
+                {isFullyCompleted && <CheckCircle2 className="w-4 h-4 text-boxing-accent" />}
               </div>
               <div className="ml-7 space-y-2">
                 {meal.items.map((item) => {
@@ -70,21 +75,21 @@ export default function DietChecklist({ currentWeek, currentDay, completed, onTo
             <Flame className="w-5 h-5 text-orange-500" />
             <div>
               <div className="text-gray-500 text-xs">Calories</div>
-              <div className="text-white text-base font-bold">{targets.calories.min}-{targets.calories.max}</div>
+              <div className="text-white text-base font-bold">{targets.calories.min}–{targets.calories.max}</div>
             </div>
           </div>
           <div className="bg-boxing-ring rounded-xl p-3 flex items-center gap-3">
             <Apple className="w-5 h-5 text-green-500" />
             <div>
               <div className="text-gray-500 text-xs">Protein</div>
-              <div className="text-white text-base font-bold">{targets.protein.min}-{targets.protein.max}g</div>
+              <div className="text-white text-base font-bold">{targets.protein.min}–{targets.protein.max}g</div>
             </div>
           </div>
           <div className="bg-boxing-ring rounded-xl p-3 flex items-center gap-3">
             <Droplets className="w-5 h-5 text-blue-500" />
             <div>
               <div className="text-gray-500 text-xs">Water</div>
-              <div className="text-white text-base font-bold">{targets.water.min}-{targets.water.max}L</div>
+              <div className="text-white text-base font-bold">{targets.water.min}–{targets.water.max}L</div>
             </div>
           </div>
           <div className="bg-boxing-ring rounded-xl p-3 flex items-center gap-3">

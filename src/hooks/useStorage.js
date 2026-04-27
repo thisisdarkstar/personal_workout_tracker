@@ -11,13 +11,11 @@ const DEFAULT_DATA = {
   dailyLogs: {},
   waterGlasses: {},
   dailyNotes: {},
+  weeklyReviews: {},
+  onboardingComplete: false,
   settings: {
     waterTarget: 12,
   },
-}
-
-function getDayOfWeek(date) {
-  return (date.getDay() + 6) % 7
 }
 
 export function useStorage() {
@@ -26,7 +24,8 @@ export function useStorage() {
     const stored = localStorage.getItem(STORAGE_KEY)
     if (stored) {
       try {
-        return JSON.parse(stored)
+        const parsed = JSON.parse(stored)
+        return { ...DEFAULT_DATA, ...parsed, settings: { ...DEFAULT_DATA.settings, ...parsed.settings } }
       } catch {
         return DEFAULT_DATA
       }
@@ -43,34 +42,36 @@ export function useStorage() {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
     start.setHours(0, 0, 0, 0)
-    
+
     const diffTime = today.getTime() - start.getTime()
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
-    
-    const weekNum = Math.floor(diffDays / 7) + 1
-    const dayNum = (today.getDay() + 6) % 7
-    
-    const week = Math.max(1, Math.min(12, weekNum))
-    const day = Math.max(0, Math.min(6, dayNum))
-    
-    return { week, day, diffDays, isToday: diffDays >= 0, startDate: data.startDate }
+
+    const todayWeek = Math.max(1, Math.min(12, Math.floor(diffDays / 7) + 1))
+    const todayDay = (today.getDay() + 6) % 7
+
+    return {
+      week: todayWeek,
+      day: todayDay,
+      todayWeek,
+      todayDay,
+      diffDays,
+      planStarted: diffDays >= 0,
+      startDate: data.startDate,
+    }
   }, [data.startDate])
 
   const jumpToToday = useCallback(() => {
-    const { week, day } = getWeekInfo()
-    setData(prev => ({
-      ...prev,
-      currentWeek: week,
-      currentDay: day,
-    }))
+    const { todayWeek, todayDay } = getWeekInfo()
+    setData(prev => ({ ...prev, currentWeek: todayWeek, currentDay: todayDay }))
   }, [getWeekInfo])
 
-  const setStartDate = useCallback((dateStr) => {
-    setData(prev => ({ ...prev, startDate: dateStr }))
-  }, [])
-
-  const updateData = useCallback((updates) => {
-    setData(prev => ({ ...prev, ...updates }))
+  const completeOnboarding = useCallback((dateStr, goal = '') => {
+    setData(prev => ({
+      ...prev,
+      startDate: dateStr,
+      goal,
+      onboardingComplete: true,
+    }))
   }, [])
 
   const setCurrentWeek = useCallback((week) => {
@@ -128,18 +129,7 @@ export function useStorage() {
     const key = `${week}-${dayIndex}`
     setData(prev => {
       const glasses = { ...prev.waterGlasses }
-      if (glasses[key] > 0) {
-        glasses[key] = Math.max(0, glasses[key] - 1)
-      }
-      return { ...prev, waterGlasses: glasses }
-    })
-  }, [])
-
-  const setWater = useCallback((week, dayIndex, count) => {
-    const key = `${week}-${dayIndex}`
-    setData(prev => {
-      const glasses = { ...prev.waterGlasses }
-      glasses[key] = Math.max(0, count)
+      glasses[key] = Math.max(0, (glasses[key] || 0) - 1)
       return { ...prev, waterGlasses: glasses }
     })
   }, [])
@@ -165,27 +155,45 @@ export function useStorage() {
     return `${week}-${dayIndex}`
   }, [])
 
-  const setWaterTarget = useCallback((target) => {
+  const saveExerciseLog = useCallback((week, dayIndex, exerciseName, note) => {
+    const key = `${week}-${dayIndex}-${exerciseName}`
+    setData(prev => {
+      const logs = { ...prev.dailyLogs }
+      if (note.trim()) {
+        logs[key] = { note: note.trim(), timestamp: new Date().toISOString() }
+      } else {
+        delete logs[key]
+      }
+      return { ...prev, dailyLogs: logs }
+    })
+  }, [])
+
+  const getExerciseLogKey = useCallback((week, dayIndex, exerciseName) => {
+    return `${week}-${dayIndex}-${exerciseName}`
+  }, [])
+
+  const saveWeeklyReview = useCallback((week, rating, reflection) => {
     setData(prev => ({
       ...prev,
-      settings: { ...prev.settings, waterTarget: target }
+      weeklyReviews: {
+        ...prev.weeklyReviews,
+        [week]: { rating, reflection, timestamp: new Date().toISOString() },
+      },
     }))
   }, [])
 
-  const getWaterTarget = useCallback(() => {
-    return data.settings?.waterTarget || 12
-  }, [data.settings])
-
-  const resetProgress = useCallback(() => {
-    setData(DEFAULT_DATA)
+  const setWaterTarget = useCallback((target) => {
+    setData(prev => ({
+      ...prev,
+      settings: { ...prev.settings, waterTarget: target },
+    }))
   }, [])
 
   return {
     data,
     getWeekInfo,
     jumpToToday,
-    setStartDate,
-    updateData,
+    completeOnboarding,
     setCurrentWeek,
     setCurrentDay,
     toggleWorkout,
@@ -194,39 +202,83 @@ export function useStorage() {
     getMealKey,
     addWater,
     removeWater,
-    setWater,
     getWaterKey,
     saveNote,
     getNoteKey,
+    saveExerciseLog,
+    getExerciseLogKey,
+    saveWeeklyReview,
     setWaterTarget,
-    getWaterTarget,
-    resetProgress,
   }
 }
 
+function hasActivityOnDay(completedWorkouts, week, dayOfWeek) {
+  return Object.keys(completedWorkouts).some(k => k.startsWith(`${week}-${dayOfWeek}-`))
+}
+
+export function calculateStreak(completedWorkouts, startDate) {
+  const start = new Date(startDate)
+  start.setHours(0, 0, 0, 0)
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  let streak = 0
+  const checkDate = new Date(today)
+
+  while (checkDate >= start) {
+    const dayOfWeek = (checkDate.getDay() + 6) % 7
+
+    // Full rest (Sunday) skipped — doesn't break or add to streak
+    if (dayOfWeek === 6) {
+      checkDate.setDate(checkDate.getDate() - 1)
+      continue
+    }
+
+    const diffDays = Math.floor((checkDate.getTime() - start.getTime()) / 86400000)
+    const week = Math.min(12, Math.floor(diffDays / 7) + 1)
+
+    if (hasActivityOnDay(completedWorkouts, week, dayOfWeek)) {
+      streak++
+      checkDate.setDate(checkDate.getDate() - 1)
+    } else if (checkDate.getTime() === today.getTime()) {
+      // Today not logged yet — don't penalise, just step back
+      checkDate.setDate(checkDate.getDate() - 1)
+    } else {
+      break
+    }
+  }
+
+  return streak
+}
+
 export function getProgressStats(data) {
-  const totalWorkouts = Object.keys(data.completedWorkouts).length
-  const totalMeals = Object.keys(data.completedMeals).length
-  const weekKey = `${data.currentWeek}-${data.currentDay}-`
+  const { completedWorkouts, completedMeals, currentWeek, currentDay, startDate } = data
 
-  const currentWeekWorkouts = Object.keys(data.completedWorkouts).filter(k => 
-    k.startsWith(`${data.currentWeek}-`)
+  const streak = calculateStreak(completedWorkouts, startDate)
+
+  const currentDayWorkouts = Object.keys(completedWorkouts).filter(k =>
+    k.startsWith(`${currentWeek}-${currentDay}-`)
   ).length
 
-  const currentWeekMeals = Object.keys(data.completedMeals).filter(k => 
-    k.startsWith(`${data.currentWeek}-`)
+  const currentWeekWorkouts = Object.keys(completedWorkouts).filter(k =>
+    k.startsWith(`${currentWeek}-`)
   ).length
 
-  const weekComplete = Math.min(100, Math.round(((currentWeekWorkouts / 5) + (currentWeekMeals / 7)) * 50))
+  const currentWeekMeals = Object.keys(completedMeals).filter(k =>
+    k.startsWith(`${currentWeek}-`)
+  ).length
 
-  const streak = Math.floor(totalWorkouts / 5)
+  const weekComplete = Math.min(100, Math.round(
+    ((currentWeekWorkouts + currentWeekMeals) / Math.max(1, currentWeek * 7)) * 50
+  ))
 
   return {
-    totalWorkouts,
-    totalMeals,
+    streak,
+    currentDayWorkouts,
     currentWeekWorkouts,
     currentWeekMeals,
     weekComplete,
-    streak,
+    totalWorkouts: Object.keys(completedWorkouts).length,
+    totalMeals: Object.keys(completedMeals).length,
   }
 }
