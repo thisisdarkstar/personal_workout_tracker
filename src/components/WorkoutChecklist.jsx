@@ -1,4 +1,4 @@
-import { Dumbbell, Clock, CheckCircle2, Bed, Zap, Timer, PenLine } from 'lucide-react'
+import { Dumbbell, Clock, CheckCircle2, Bed, Zap, Timer, PenLine, Plus, Minus } from 'lucide-react'
 import { useState } from 'react'
 import WorkoutTimer from './WorkoutTimer'
 
@@ -6,11 +6,32 @@ export default function WorkoutChecklist({
   workout, completed, onToggle, getWorkoutKey,
   currentWeek, currentDay,
   exerciseLogs = {}, onLogExercise, getLogKey,
+  completedSets = {}, getSetKey, onUpdateSets,
 }) {
   const isRestDay = workout.exercises.length <= 1 && workout.exercises[0]?.name === 'Rest & Recovery'
-  const completedCount = workout.exercises.filter(e => completed[getWorkoutKey(currentWeek, currentDay, e.name)]).length
+  const getExerciseProgress = (exercise) => {
+    const key = getWorkoutKey(currentWeek, currentDay, exercise.name)
+    if (completed[key]) return 1
+    if (exercise.sets) {
+      const setKey = getSetKey ? getSetKey(currentWeek, currentDay, exercise.name) : null
+      const setsDone = setKey ? (completedSets[setKey] || 0) : 0
+      return setsDone / exercise.sets
+    }
+    return 0
+  }
+  const totalProgress = workout.exercises.reduce((sum, e) => sum + getExerciseProgress(e), 0)
   const totalCount = workout.exercises.length
-  const progress = totalCount > 0 ? (completedCount / totalCount) * 100 : 0
+  const progress = totalCount > 0 ? (totalProgress / totalCount) * 100 : 0
+  const completedCount = workout.exercises.filter(e => {
+    const key = getWorkoutKey(currentWeek, currentDay, e.name)
+    if (completed[key]) return true
+    if (e.sets) {
+      const setKey = getSetKey ? getSetKey(currentWeek, currentDay, e.name) : null
+      const setsDone = setKey ? (completedSets[setKey] || 0) : 0
+      return setsDone >= e.sets
+    }
+    return false
+  }).length
   const allDone = completedCount === totalCount && totalCount > 0
 
   const [timerExercise, setTimerExercise] = useState(null)
@@ -75,6 +96,10 @@ export default function WorkoutChecklist({
         {workout.exercises.map((exercise, index) => {
           const key = getWorkoutKey(currentWeek, currentDay, exercise.name)
           const isCompleted = completed[key]
+          const setKey = getSetKey ? getSetKey(currentWeek, currentDay, exercise.name) : null
+          const setsDone = setKey ? (completedSets[setKey] || 0) : 0
+          const hasSets = !!exercise.sets
+          const allSetsDone = hasSets && setsDone >= exercise.sets
           const logKey = getLogKey ? getLogKey(currentWeek, currentDay, exercise.name) : null
           const existingLog = logKey && exerciseLogs[logKey]
           const isLogOpen = expandedLog === exercise.name
@@ -116,6 +141,42 @@ export default function WorkoutChecklist({
                       </span>
                     )}
                   </div>
+                  {exercise.sets && (
+                    <div className="mt-2 flex items-center gap-2">
+                      <span className="text-xs text-gray-500">Sets:</span>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            const setKey = getSetKey(currentWeek, currentDay, exercise.name)
+                            const currentSets = completedSets[setKey] || 0
+                            if (currentSets > 0) {
+                              onUpdateSets(currentWeek, currentDay, exercise.name, currentSets - 1)
+                            }
+                          }}
+                          className="w-7 h-7 rounded-lg bg-boxing-dark flex items-center justify-center text-gray-400 hover:text-red-400 transition"
+                        >
+                          <Minus className="w-4 h-4" />
+                        </button>
+                        <span className="w-8 text-center text-sm font-bold text-boxing-neon">
+                          {getSetKey ? (completedSets[getSetKey(currentWeek, currentDay, exercise.name)] || 0) : 0}/{exercise.sets}
+                        </span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            const setKey = getSetKey(currentWeek, currentDay, exercise.name)
+                            const currentSets = completedSets[setKey] || 0
+                            if (currentSets < exercise.sets) {
+                              onUpdateSets(currentWeek, currentDay, exercise.name, currentSets + 1)
+                            }
+                          }}
+                          className="w-7 h-7 rounded-lg bg-boxing-dark flex items-center justify-center text-gray-400 hover:text-green-400 transition"
+                        >
+                          <Plus className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
                   {existingLog && (
                     <div className="mt-1 text-xs text-yellow-400 italic truncate">
                       "{existingLog.note}"

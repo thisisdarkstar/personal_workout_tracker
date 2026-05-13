@@ -26,12 +26,13 @@ export default function App() {
     removeWater, getWaterKey, saveNote, getNoteKey,
     saveExerciseLog, getExerciseLogKey,
     saveWeeklyReview, setWaterTarget, completeOnboarding,
+    getSetKey, updateCompletedSets,
   } = useStorage()
 
   const {
     currentWeek, currentDay, completedWorkouts, completedMeals,
     waterGlasses = {}, dailyNotes = {}, weeklyReviews = {},
-    onboardingComplete,
+    completedSets = {}, onboardingComplete,
   } = data
 
   const weekInfo = getWeekInfo()
@@ -176,6 +177,9 @@ export default function App() {
             exerciseLogs={data.dailyLogs}
             onLogExercise={saveExerciseLog}
             getLogKey={getExerciseLogKey}
+            completedSets={completedSets}
+            getSetKey={getSetKey}
+            onUpdateSets={updateCompletedSets}
           />
         ) : (
           <DietChecklist

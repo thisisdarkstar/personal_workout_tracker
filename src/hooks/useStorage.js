@@ -12,6 +12,7 @@ const DEFAULT_DATA = {
   waterGlasses: {},
   dailyNotes: {},
   weeklyReviews: {},
+  completedSets: {},
   onboardingComplete: false,
   settings: {
     waterTarget: 12,
@@ -189,6 +190,23 @@ export function useStorage() {
     }))
   }, [])
 
+  const getSetKey = useCallback((week, dayIndex, exerciseName) => {
+    return `${week}-${dayIndex}-${exerciseName}`
+  }, [])
+
+  const updateCompletedSets = useCallback((week, dayIndex, exerciseName, setsDone) => {
+    const key = `${week}-${dayIndex}-${exerciseName}`
+    setData(prev => {
+      const sets = { ...prev.completedSets }
+      if (setsDone === 0 || setsDone === null) {
+        delete sets[key]
+      } else {
+        sets[key] = setsDone
+      }
+      return { ...prev, completedSets: sets }
+    })
+  }, [])
+
   return {
     data,
     getWeekInfo,
@@ -209,6 +227,8 @@ export function useStorage() {
     getExerciseLogKey,
     saveWeeklyReview,
     setWaterTarget,
+    getSetKey,
+    updateCompletedSets,
   }
 }
 
