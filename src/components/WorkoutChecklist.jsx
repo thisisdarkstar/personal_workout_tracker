@@ -8,7 +8,7 @@ export default function WorkoutChecklist({
   exerciseLogs = {}, onLogExercise, getLogKey,
   completedSets = {}, getSetKey, onUpdateSets,
 }) {
-  const isRestDay = workout.exercises.length <= 1 && workout.exercises[0]?.name === 'Rest & Recovery'
+  const isRestDay = workout.title === 'Full Rest'
   const getExerciseProgress = (exercise) => {
     const key = getWorkoutKey(currentWeek, currentDay, exercise.name)
     if (completed[key]) return 1
@@ -76,7 +76,7 @@ export default function WorkoutChecklist({
       {allDone && !isRestDay && (
         <div className="mb-4 p-3 bg-boxing-neon/10 border border-boxing-neon/30 rounded-xl text-center">
           <div className="text-boxing-neon font-bold">Session Complete!</div>
-          <div className="text-gray-400 text-xs mt-0.5">Great work — rest up and recover.</div>
+          <div className="text-gray-400 text-xs mt-0.5">Great work - rest up and recover.</div>
         </div>
       )}
 
@@ -105,6 +105,8 @@ export default function WorkoutChecklist({
           const isLogOpen = expandedLog === exercise.name
           const hasDuration = !!exercise.duration
 
+          const { title: exTitle, detail: exDetail } = parseExerciseName(exercise.name)
+
           return (
             <div key={index}>
               <div
@@ -124,9 +126,14 @@ export default function WorkoutChecklist({
                   className="flex-1 min-w-0"
                   onClick={() => onToggle(currentWeek, currentDay, exercise.name)}
                 >
-                  <div className={`font-semibold ${isCompleted ? 'text-boxing-neon line-through' : 'text-white'}`}>
-                    {exercise.name}
+                  <div className={`font-semibold leading-snug ${isCompleted ? 'text-boxing-neon line-through' : 'text-white'}`}>
+                    {exTitle}
                   </div>
+                  {exDetail && (
+                    <div className={`text-xs mt-0.5 leading-snug ${isCompleted ? 'text-boxing-neon/50 line-through' : 'text-gray-500'}`}>
+                      {exDetail}
+                    </div>
+                  )}
                   <div className="text-gray-500 text-sm flex items-center gap-3 mt-1">
                     {exercise.sets && (
                       <span className="flex items-center gap-1">
@@ -212,7 +219,7 @@ export default function WorkoutChecklist({
               {/* Inline performance log */}
               {isLogOpen && onLogExercise && (
                 <ExerciseLog
-                  exerciseName={exercise.name}
+                  exerciseName={exTitle}
                   existingNote={existingLog?.note || ''}
                   onSave={(note) => {
                     onLogExercise(currentWeek, currentDay, exercise.name, note)
@@ -235,6 +242,18 @@ export default function WorkoutChecklist({
       )}
     </div>
   )
+}
+
+function parseExerciseName(name) {
+  if (name.includes(' - ')) {
+    const idx = name.indexOf(' - ')
+    return { title: name.slice(0, idx), detail: name.slice(idx + 3) }
+  }
+  if (name.includes(' + ')) {
+    const idx = name.indexOf(' + ')
+    return { title: name.slice(0, idx), detail: name.slice(idx + 3) }
+  }
+  return { title: name, detail: null }
 }
 
 function ExerciseLog({ exerciseName, existingNote, onSave, onCancel }) {

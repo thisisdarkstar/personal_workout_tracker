@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Dumbbell, Utensils, BarChart3, Flame, CheckCircle, Droplets, FileText, X } from 'lucide-react'
+import { Dumbbell, Utensils, BarChart3, Flame, CheckCircle, Droplets, FileText, X, Settings } from 'lucide-react'
 import DayNavigator from './components/DayNavigator'
 import WorkoutChecklist from './components/WorkoutChecklist'
 import DietChecklist from './components/DietChecklist'
@@ -9,14 +9,16 @@ import NotesHistory from './components/NotesHistory'
 import Dashboard from './components/Dashboard'
 import WeeklyReview from './components/WeeklyReview'
 import Onboarding from './components/Onboarding'
+import PlanEditor from './components/PlanEditor'
 import { useStorage, getProgressStats } from './hooks/useStorage'
-import { getWorkoutForDay, PHASES, getPhase, isRestDayIndex } from './data/workoutPlan'
+import { getWorkoutForDay, PHASES, getPhase, isRestDayIndex, getTotalWeeks, getWaterTarget } from './data/workoutPlan'
 
 export default function App() {
   const [showDashboard, setShowDashboard] = useState(false)
   const [activeTab, setActiveTab] = useState('workout')
   const [showWater, setShowWater] = useState(false)
   const [showNotes, setShowNotes] = useState(false)
+  const [showPlanEditor, setShowPlanEditor] = useState(false)
   const [notesMode, setNotesMode] = useState('editor')
   const [phaseBanner, setPhaseBanner] = useState(null)
 
@@ -43,7 +45,7 @@ export default function App() {
   const stats = getProgressStats(data)
   const waterKey = getWaterKey(currentWeek, currentDay)
   const waterCount = waterGlasses[waterKey] || 0
-  const waterTarget = data.settings?.waterTarget || 12
+  const waterTarget = data.settings?.waterTarget ?? getWaterTarget()
   const isSunday = currentDay === 6
 
   useEffect(() => {
@@ -76,7 +78,7 @@ export default function App() {
           className="fixed top-0 inset-x-0 z-50 flex items-center justify-center p-3 text-sm font-bold text-boxing-dark animate-bounce"
           style={{ backgroundColor: PHASES[phaseBanner].color }}
         >
-          🎉 {PHASES[phaseBanner].name} unlocked — {PHASES[phaseBanner].focus}!
+          🎉 {PHASES[phaseBanner].name} unlocked - {PHASES[phaseBanner].focus}!
           <button onClick={() => setPhaseBanner(null)} className="ml-3 opacity-60 hover:opacity-100">
             <X className="w-4 h-4" />
           </button>
@@ -92,30 +94,39 @@ export default function App() {
                 <h1 className="text-white font-bold">12-Week Plan</h1>
                 <p className="text-gray-500 text-xs">
                   <span style={{ color: phaseData.color }}>{phaseData.name}</span>
-                  <span className="ml-1 text-gray-600">· Week {currentWeek}/12</span>
+                  <span className="ml-1 text-gray-600">· Week {currentWeek}/{getTotalWeeks()}</span>
                 </p>
               </div>
             </div>
-            <button
-              onClick={jumpToToday}
-              disabled={isViewingToday}
-              className={`px-3 py-2 rounded-lg text-sm font-medium ${isViewingToday ? 'text-gray-500' : 'text-boxing-neon'}`}
-            >
-              {isViewingToday ? 'Today' : 'Go Today'}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowPlanEditor(true)}
+                className="p-2 rounded-lg bg-boxing-ring text-gray-400 hover:text-boxing-neon transition"
+                title="Edit plan"
+              >
+                <Settings className="w-5 h-5" />
+              </button>
+              <button
+                onClick={jumpToToday}
+                disabled={isViewingToday}
+                className={`px-3 py-2 rounded-lg text-sm font-medium ${isViewingToday ? 'text-gray-500' : 'text-boxing-neon'}`}
+              >
+                {isViewingToday ? 'Today' : 'Go Today'}
+              </button>
+            </div>
           </div>
           <div className="flex items-center gap-3">
             <div className="flex-1">
               <div className="flex justify-between mb-1">
                 <span className="text-xs text-gray-500">Progress</span>
                 <span className="text-xs font-medium" style={{ color: phaseData.color }}>
-                  {Math.round((currentWeek / 12) * 100)}%
+                  {Math.round((currentWeek / getTotalWeeks()) * 100)}%
                 </span>
               </div>
               <div className="w-full bg-boxing-ring rounded-full h-2">
                 <div
                   className="h-2 rounded-full transition-all duration-500"
-                  style={{ width: `${(currentWeek / 12) * 100}%`, backgroundColor: phaseData.color }}
+                  style={{ width: `${(currentWeek / getTotalWeeks()) * 100}%`, backgroundColor: phaseData.color }}
                 />
               </div>
             </div>
@@ -307,6 +318,7 @@ export default function App() {
       </nav>
 
       {showDashboard && <Dashboard data={data} onClose={() => setShowDashboard(false)} />}
+      {showPlanEditor && <PlanEditor onClose={() => setShowPlanEditor(false)} />}
     </div>
   )
 }

@@ -1,6 +1,6 @@
 import { Trophy, Flame, X, Sparkles, Activity } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts'
-import { DAYS, PHASES, getPhase, getWorkoutForDay, getPhaseExerciseTotal } from '../data/workoutPlan'
+import { DAYS, PHASES, getPhase, getWorkoutForDay, getPhaseExerciseTotal, getTotalWeeks } from '../data/workoutPlan'
 import { calculateStreak } from '../hooks/useStorage'
 
 export default function Dashboard({ data, onClose }) {
@@ -100,9 +100,9 @@ export default function Dashboard({ data, onClose }) {
         <div className="bg-boxing-panel rounded-2xl p-4 mb-4">
           <h3 className="text-white font-semibold mb-4">Phase Progress</h3>
           <div className="space-y-4">
-            {[1, 2, 3].map((p) => {
+            {Object.keys(PHASES).map(p => {
               const ps = stats.phaseProgress[p]
-              const isActive = phase === p
+              const isActive = phase === Number(p)
               return (
                 <div key={p} className={`${isActive ? 'bg-boxing-dark/30' : ''} p-3 rounded-xl`}>
                   <div className="flex items-center justify-between mb-2">
@@ -136,11 +136,11 @@ export default function Dashboard({ data, onClose }) {
             </div>
             <div className="flex justify-between items-center">
               <span className="text-gray-400">Week</span>
-              <span className="text-white font-bold">{currentWeek}/12</span>
+              <span className="text-white font-bold">{currentWeek}/{getTotalWeeks()}</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-gray-400">Remaining</span>
-              <span className="text-white">{12 - currentWeek} wks</span>
+              <span className="text-white">{getTotalWeeks() - currentWeek} wks</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-gray-400">Completion</span>
@@ -172,7 +172,7 @@ function calculateStats(workouts, meals, currentWeek, currentDay, startDate) {
     ? Math.min(100, Math.round((todayDone / todayExerciseTotal) * 100))
     : 0
 
-  // Weekly chart — use actual exercise count per day
+  // Weekly chart - use actual exercise count per day
   const weeklyData = DAYS.map((day, dayIndex) => {
     const exerciseTotal = getWorkoutForDay(currentWeek, dayIndex).exercises.length
     const done = Object.keys(workouts).filter(k => k.startsWith(`${currentWeek}-${dayIndex}-`)).length
@@ -184,7 +184,8 @@ function calculateStats(workouts, meals, currentWeek, currentDay, startDate) {
 
   // Phase progress using real exercise totals
   const phaseProgress = {}
-  for (let p = 1; p <= 3; p++) {
+  const phaseCount = Object.keys(PHASES).length
+  for (let p = 1; p <= phaseCount; p++) {
     const total = getPhaseExerciseTotal(p)
     const startWeek = (p - 1) * 4 + 1
     const endWeek = p * 4

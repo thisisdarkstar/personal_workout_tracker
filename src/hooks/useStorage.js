@@ -248,7 +248,7 @@ export function calculateStreak(completedWorkouts, startDate) {
   while (checkDate >= start) {
     const dayOfWeek = (checkDate.getDay() + 6) % 7
 
-    // Full rest (Sunday) skipped — doesn't break or add to streak
+    // Full rest (Sunday) skipped - doesn't break or add to streak
     if (dayOfWeek === 6) {
       checkDate.setDate(checkDate.getDate() - 1)
       continue
@@ -261,7 +261,7 @@ export function calculateStreak(completedWorkouts, startDate) {
       streak++
       checkDate.setDate(checkDate.getDate() - 1)
     } else if (checkDate.getTime() === today.getTime()) {
-      // Today not logged yet — don't penalise, just step back
+      // Today not logged yet - don't penalise, just step back
       checkDate.setDate(checkDate.getDate() - 1)
     } else {
       break
