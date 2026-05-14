@@ -217,15 +217,27 @@ function WorkoutTab({ plan, setPlan, markChanged, expandedPhases, setExpandedPha
                         </div>
 
                         <div className="flex flex-wrap gap-1.5">
-                          {dayPlan.exercises.map((ex, idx) => (
+                          {dayPlan.exercises.map((ex, idx) => {
+                            const dashIdx = ex.name.indexOf(' - ')
+                            const exTitle = dashIdx >= 0 ? ex.name.slice(0, dashIdx) : ex.name
+                            const exDetail = dashIdx >= 0 ? ex.name.slice(dashIdx + 3) : ''
+                            const buildName = (t, d) => d.trim() ? `${t} - ${d}` : t
+                            return (
                             <div key={idx} className="w-full flex items-center gap-2 bg-boxing-ring rounded-lg p-2">
                               <div className="flex-1 min-w-0 space-y-1.5">
                                 <input
                                   type="text"
-                                  value={ex.name}
-                                  onChange={e => updateExercise(phase, dt.type, idx, 'name', e.target.value)}
+                                  value={exTitle}
+                                  onChange={e => updateExercise(phase, dt.type, idx, 'name', buildName(e.target.value, exDetail))}
                                   placeholder="Exercise name"
                                   className="w-full px-2 py-1 bg-boxing-dark rounded text-white text-sm placeholder-gray-600"
+                                />
+                                <input
+                                  type="text"
+                                  value={exDetail}
+                                  onChange={e => updateExercise(phase, dt.type, idx, 'name', buildName(exTitle, e.target.value))}
+                                  placeholder="Detail / instructions (optional)"
+                                  className="w-full px-2 py-0.5 bg-boxing-dark rounded text-gray-400 text-xs placeholder-gray-600"
                                 />
                                 <div className="flex gap-2 items-center">
                                   <label className="flex items-center gap-1 text-xs text-gray-500">
@@ -246,7 +258,8 @@ function WorkoutTab({ plan, setPlan, markChanged, expandedPhases, setExpandedPha
                                 <Trash2 className="w-4 h-4" />
                               </button>
                             </div>
-                          ))}
+                            )
+                          })}
                         </div>
 
                         <button onClick={() => addExercise(phase, dt.type)} className="w-full py-2 border border-dashed border-gray-700 rounded-lg text-gray-500 text-xs hover:text-green-400 hover:border-green-400 transition flex items-center justify-center gap-1">
